@@ -1,3 +1,4 @@
+
 /*
        Licensed to the Apache Software Foundation (ASF) under one
        or more contributor license agreements.  See the NOTICE file
@@ -48,6 +49,7 @@ import android.webkit.CookieManager;
 import android.webkit.HttpAuthHandler;
 import android.webkit.JavascriptInterface;
 import android.webkit.SslErrorHandler;
+import android.webkit.ClientCertRequest;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
@@ -65,6 +67,7 @@ import android.widget.TextView;
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.Config;
 import org.apache.cordova.CordovaArgs;
+import org.apache.cordova.CordovaClientCertRequest;
 import org.apache.cordova.CordovaHttpAuthHandler;
 import org.apache.cordova.CordovaPlugin;
 import org.apache.cordova.CordovaWebView;
@@ -1459,6 +1462,49 @@ public class InAppBrowser extends CordovaPlugin {
 
             // By default handle 401 like we'd normally do!
             super.onReceivedHttpAuthRequest(view, handler, host, realm);
+        }
+
+        /**
+         * On received client cert request.
+         * The method forwards the request to any running plugins before using the default implementation.
+         *
+         * @param view
+         * @param request
+         */
+        @Override
+        public void onReceivedClientCertRequest(WebView view, ClientCertRequest request)
+        {
+
+            // Check if there is some plugin which can resolve this certificate request
+            PluginManager pluginManager = null;
+            try {
+                Method gpm = webView.getClass().getMethod("getPluginManager");
+                pluginManager = (PluginManager)gpm.invoke(webView);
+            } catch (NoSuchMethodException e) {
+                LOG.d(LOG_TAG, e.getLocalizedMessage());
+            } catch (IllegalAccessException e) {
+                LOG.d(LOG_TAG, e.getLocalizedMessage());
+            } catch (InvocationTargetException e) {
+                LOG.d(LOG_TAG, e.getLocalizedMessage());
+            }
+
+            if (pluginManager == null) {
+                try {
+                    Field pmf = webView.getClass().getField("pluginManager");
+                    pluginManager = (PluginManager)pmf.get(webView);
+                } catch (NoSuchFieldException e) {
+                    LOG.d(LOG_TAG, e.getLocalizedMessage());
+                } catch (IllegalAccessException e) {
+                    LOG.d(LOG_TAG, e.getLocalizedMessage());
+                }
+            }
+
+            if (pluginManager != null && pluginManager.onReceivedClientCertRequest(null, new CordovaClientCertRequest(request))) {
+                return;
+            }
+
+            // By default pass to WebViewClient
+            super.onReceivedClientCertRequest(view, request);
         }
     }
 }
