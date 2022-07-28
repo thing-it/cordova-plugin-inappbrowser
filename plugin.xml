@@ -20,7 +20,7 @@
 
 <plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
            id="cordova-plugin-inappbrowser"
-      version="5.0.1-dev">
+      version="5.0.3">
 
     <name>InAppBrowser</name>
     <description>Cordova InAppBrowser Plugin</description>
@@ -37,6 +37,10 @@
 
     <!-- android -->
     <platform name="android">
+
+        <hook type="before_prepare" src="hooks/android-before-platform-add.js" />
+        <hook type="after_prepare" src="hooks/android-after-platform-add.js" />
+
         <js-module src="www/inappbrowser.js" name="inappbrowser">
             <clobbers target="cordova.InAppBrowser.open" />
         </js-module>
